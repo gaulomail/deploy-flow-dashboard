@@ -171,7 +171,7 @@ export const DeploymentHistory: React.FC = () => {
         <div className="bg-purple-50 border border-purple-200 rounded-lg p-3">
           <p className="text-xs text-purple-800 flex items-center gap-2">
             <div className="w-1.5 h-1.5 bg-purple-500 rounded-full"></div>
-            View past deployments for auditing (FR9)
+            View and audit past deployment activities
           </p>
         </div>
       </CardContent>

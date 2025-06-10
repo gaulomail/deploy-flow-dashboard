@@ -129,7 +129,7 @@ export const DeploymentProgress: React.FC<DeploymentProgressProps> = ({ logs }) 
         <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
           <p className="text-xs text-blue-800 flex items-center gap-2">
             <div className="w-1.5 h-1.5 bg-blue-500 rounded-full"></div>
-            View deployment progress in real-time (FR6)
+            Monitor deployment progress and logs in real-time
           </p>
         </div>
       </CardContent>

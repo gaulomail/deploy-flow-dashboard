@@ -86,7 +86,7 @@ export const DeploymentForm: React.FC<DeploymentFormProps> = ({
             />
             <p className="text-xs text-gray-500 flex items-center gap-1">
               <span className="w-1 h-1 bg-blue-400 rounded-full"></span>
-              Enter your GitHub username to select your fork (FR1)
+              Enter your GitHub username to select your fork
             </p>
           </div>
 
@@ -122,7 +122,7 @@ export const DeploymentForm: React.FC<DeploymentFormProps> = ({
             </Select>
             <p className="text-xs text-gray-500 flex items-center gap-1">
               <span className="w-1 h-1 bg-blue-400 rounded-full"></span>
-              Select the target staging server (FR2, NFR6)
+              Select the target staging server
             </p>
           </div>
 
@@ -158,7 +158,7 @@ export const DeploymentForm: React.FC<DeploymentFormProps> = ({
             </Select>
             <p className="text-xs text-gray-500 flex items-center gap-1">
               <span className="w-1 h-1 bg-blue-400 rounded-full"></span>
-              Choose the branch to deploy (FR3)
+              Choose the branch to deploy
             </p>
           </div>
 
@@ -189,7 +189,7 @@ export const DeploymentForm: React.FC<DeploymentFormProps> = ({
                   </Badge>
                 </div>
                 <p className="text-xs text-gray-600 ml-7">
-                  Enable/disable Ruckus migrations (FR4)
+                  Enable or disable Ruckus migrations during deployment
                 </p>
               </div>
             </div>
@@ -212,7 +212,7 @@ export const DeploymentForm: React.FC<DeploymentFormProps> = ({
                   </Badge>
                 </div>
                 <p className="text-xs text-gray-600 ml-7">
-                  Enable/disable supervisor reload (FR5)
+                  Enable or disable supervisor reload after deployment
                 </p>
               </div>
             </div>
@@ -251,7 +251,7 @@ export const DeploymentForm: React.FC<DeploymentFormProps> = ({
             <div className="bg-amber-50 border border-amber-200 rounded-lg p-3">
               <p className="text-xs text-amber-800 flex items-center gap-2">
                 <div className="w-1.5 h-1.5 bg-amber-500 rounded-full"></div>
-                Initiate deployment (FR14, FR17) or release lock (FR7, FR15, FR17)
+                Use Deploy to initiate deployment or Release Lock to free up deployment resources
               </p>
             </div>
           </div>
