@@ -1,0 +1,25 @@
+version: '3.8'
+services:
+  backend:
+    build:
+      context: ./deploy-flow-backend
+      dockerfile: Dockerfile
+    container_name: deploy-flow-backend
+    ports:
+      - "5000:5000"
+    environment:
+      - NODE_ENV=Development
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./deploy-flow-frontend
+      dockerfile: Dockerfile
+    container_name: deploy-flow-frontend
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=Development
+    depends_on:
+      - backend
+    restart: unless-stopped

@@ -13,6 +13,7 @@ const Index = () => {
   const handleDeploy = (formData: any) => {
     console.log('Deploying with data:', formData);
     setIsDeploying(true);
+
     setDeploymentLogs(['Starting deployment pipeline...']);
     
     // Simulate deployment progress with more realistic messages
