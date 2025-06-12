@@ -171,23 +171,69 @@ const DeploymentInterface = () => {
   }, [selectedRepo]);
 
   // Fetch branches when repo is selected
-  const fetchBranches = async () => {
-    if (!selectedRepo) return;
-    
+  const fetchBranches = React.useCallback(async () => {
+    if (!selectedRepo || !selectedRepo.owner || !selectedRepo.name) {
+      setBranches([]);
+      setBranchesError(''); // Clear error if repo is not fully selected
+      setBranchesLoading(false);
+      return;
+    }
+
+    setBranchesLoading(true);
+    setBranchesError('');
+    setSelectedBranch(''); // Clear previous branch selection when fetching new ones
+    setSelectedBranchDetails(null); // Clear details of previously selected branch
+
     try {
-      const response = await fetch(`/api/branches?repo=${selectedRepo}`, {
-        headers: {
-          'Authorization': `Bearer ${settings.githubToken || import.meta.env.VITE_GITHUB_TOKEN}`
+      const response = await fetch(`http://localhost:3000/branches/branches?owner=${selectedRepo.owner}&repo=${selectedRepo.name}`);
+
+      if (!response.ok) {
+        let errorMsg = `Failed to fetch branches (status: ${response.status})`;
+        try {
+          const errorData = await response.json();
+          errorMsg = errorData.error || errorData.message || errorMsg;
+        } catch (e) {
+          // If response is not JSON or empty, use the status-based message
         }
-      });
-      if (!response.ok) throw new Error('Failed to fetch branches');
+        throw new Error(errorMsg);
+      }
+
       const data = await response.json();
-      setBranches(data.branches || []);
+
+      if (data && Array.isArray(data.branches)) {
+        setBranches(data.branches);
+        if (data.branches.length === 0) {
+          setBranchesError('No branches found for this repository.');
+        }
+      } else {
+        setBranches([]);
+        setBranchesError('Received unexpected format for branch data. Expected an object with a "branches" array.');
+        console.warn('Unexpected branch data format:', data);
+      }
     } catch (error) {
       console.error('Error fetching branches:', error);
-      toast.error('Failed to fetch branches');
+      const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred while fetching branches';
+      setBranchesError(errorMessage);
+      setBranches([]); // Clear branches on error
+      toast.error(errorMessage);
+    } finally {
+      setBranchesLoading(false);
     }
-  };
+  }, [selectedRepo.owner, selectedRepo.name]); // Dependencies: owner and name from selectedRepo
+
+  // Effect to fetch branches when the selected repository changes
+  useEffect(() => {
+    if (selectedRepo && selectedRepo.owner && selectedRepo.name) {
+      fetchBranches();
+    } else {
+      // Clear branch related state if no repo is selected or selection is incomplete
+      setBranches([]);
+      setSelectedBranch('');
+      setSelectedBranchDetails(null);
+      setBranchesError('');
+      setBranchesLoading(false);
+    }
+  }, [selectedRepo, fetchBranches]); // fetchBranches is now a stable dependency due to useCallback
 
   // Fetch branch details when a branch is selected
   const fetchBranchDetails = async (branch: string) => {
@@ -357,8 +403,8 @@ const DeploymentInterface = () => {
 
         {/* Settings Dialog */}
         {showSettings && (
-          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center">
-            <div className="relative w-full max-w-4xl max-h-[90vh] overflow-y-auto">
+          <div className="fixed inset-0 bg-background/80 z-50 flex items-center justify-center p-4">
+            <div className="relative bg-background rounded-lg border-2 border-primary w-full max-w-2xl max-h-[85vh] overflow-y-auto shadow-xl">
               <Button
                 variant="ghost"
                 size="icon"
@@ -416,7 +462,7 @@ const DeploymentInterface = () => {
                     searchPlaceholder="Search repositories..."
                     emptyPlaceholder={reposError ? reposError : "No repositories found."}
                     disabled={reposLoading || reposError !== ''}
-                    className="h-12 text-base border-2 border-zinc-800 hover:border-primary/50 transition-colors bg-zinc-900 text-gray-300 data-[state=open]:border-primary"
+                    className="h-12 text-base border-2 border-zinc-800 hover:border-zinc-700 transition-colors bg-zinc-900 text-gray-300 data-[state=open]:border-zinc-700"
                   />
                   {/* Display error separately if not covered by Combobox's emptyPlaceholder when disabled and errored */}
                   {reposError && (reposLoading || repositories.length === 0) && (
@@ -445,7 +491,7 @@ const DeploymentInterface = () => {
                     searchPlaceholder="Search branches..."
                     emptyPlaceholder={branchesError ? branchesError : "No branches found."}
                     disabled={branchesLoading || branchesError !== ''}
-                    className="h-12 text-base border-2 border-zinc-800 hover:border-primary/50 transition-colors bg-zinc-900 text-gray-300 data-[state=open]:border-primary"
+                    className="h-12 text-base border-2 border-zinc-800 hover:border-zinc-700 transition-colors bg-zinc-900 text-gray-300 data-[state=open]:border-zinc-700"
                   />
                   {/* Display error separately if not covered by Combobox's emptyPlaceholder when disabled and errored */}
                   {branchesError && (branchesLoading || branches.length === 0) && (
@@ -477,7 +523,7 @@ const DeploymentInterface = () => {
                     </SelectTrigger>
                     <SelectContent className="bg-zinc-900 border-2 border-zinc-800 max-h-60">
                       {environments.map((env) => (
-                        <SelectItem key={env} value={env} className="hover:bg-zinc-800 text-gray-300">
+                        <SelectItem key={env} value={env} className="hover:bg-zinc-800 text-gray-300 data-[state=checked]:bg-zinc-700">
                           <div className="flex items-center gap-2">
                             <div className={`h-3 w-3 rounded-full ${env === 'ubt' ? 'bg-primary' : 'bg-primary/60'}`} />
                             {env}

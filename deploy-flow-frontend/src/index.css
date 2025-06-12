@@ -5,14 +5,14 @@
 /* Definition of the design system. All colors, gradients, fonts, etc should be defined here. */
 
 :root {
-  --background: 0 0% 98%;
-  --foreground: 0 0% 40%;
+  --background: 210 40% 98%;
+  --foreground: 215 25% 40%;
 
-  --card: 0 0% 100%;
-  --card-foreground: 0 0% 40%;
+  --card: 210 40% 100%;
+  --card-foreground: 215 25% 40%;
 
-  --popover: 0 0% 100%;
-  --popover-foreground: 0 0% 40%;
+  --popover: 210 40% 98%;
+  --popover-foreground: 215 25% 40%;
 
   /* Mukuru Orange */
   --primary: 14 75% 54%;
@@ -23,43 +23,43 @@
   --secondary-foreground: 0 0% 100%;
 
   /* Light gray for muted backgrounds */
-  --muted: 0 0% 96%;
-  --muted-foreground: 0 0% 60%;
+  --muted: 210 40% 96%;
+  --muted-foreground: 215 25% 60%;
 
   /* Mukuru Orange (Accent) */
   --accent: 14 75% 54%;
-  --accent-foreground: 0 0% 100%;
+  --accent-foreground: 210 40% 98%;
 
   --destructive: 0 84.2% 60.2%;
   --destructive-foreground: 0 0% 100%;
 
   /* Subtle borders and inputs */
-  --border: 0 0% 92%;
-  --input: 0 0% 92%;
+  --border: 214 32% 91%;
+  --input: 214 32% 91%;
   --ring: 14 75% 54%;
 
   --radius: 0.5rem;
 
   /* Sidebar styling */
-  --sidebar-background: 0 0% 98%;
+  --sidebar-background: 210 40% 98%;
   --sidebar-foreground: 14 75% 54%;
   --sidebar-primary: 14 75% 54%;
-  --sidebar-primary-foreground: 0 0% 100%;
-  --sidebar-accent: 0 0% 96%;
+  --sidebar-primary-foreground: 210 40% 98%;
+  --sidebar-accent: 210 40% 96%;
   --sidebar-accent-foreground: 14 75% 54%;
-  --sidebar-border: 0 0% 92%;
+  --sidebar-border: 214 32% 91%;
   --sidebar-ring: 14 75% 54%;
 }
 
 .dark {
-  --background: 0 0% 0%;
-  --foreground: 0 0% 98%;
+  --background: 222 47% 4%;
+  --foreground: 210 40% 98%;
 
-  --card: 0 0% 5%;
-  --card-foreground: 0 0% 98%;
+  --card: 222 47% 6%;
+  --card-foreground: 210 40% 98%;
 
-  --popover: 0 0% 5%;
-  --popover-foreground: 0 0% 98%;
+  --popover: 222 47% 6%;
+  --popover-foreground: 210 40% 98%;
 
   /* Maintain Mukuru Orange in dark mode */
   --primary: 14 75% 54%;
@@ -69,8 +69,8 @@
   --secondary: 14 75% 54%;
   --secondary-foreground: 0 0% 100%;
 
-  --muted: 0 0% 10%;
-  --muted-foreground: 0 0% 65%;
+  --muted: 223 47% 11%;
+  --muted-foreground: 215 20% 65%;
 
   /* Mukuru Orange (Accent) - for dark mode */
   --accent: 14 75% 54%;
@@ -79,17 +79,17 @@
   --destructive: 0 62.8% 30.6%;
   --destructive-foreground: 0 0% 98%;
 
-  --border: 0 0% 20%;
-  --input: 0 0% 20%;
+  --border: 216 34% 17%;
+  --input: 216 34% 17%;
   --ring: 14 75% 54%;
 
-  --sidebar-background: 0 0% 3%;
-  --sidebar-foreground: 0 0% 98%;
+  --sidebar-background: 222 47% 4%;
+  --sidebar-foreground: 210 40% 98%;
   --sidebar-primary: 14 75% 54%;
-  --sidebar-primary-foreground: 0 0% 100%;
-  --sidebar-accent: 0 0% 15%;
-  --sidebar-accent-foreground: 0 0% 98%;
-  --sidebar-border: 0 0% 20%;
+  --sidebar-primary-foreground: 210 40% 98%;
+  --sidebar-accent: 223 47% 11%;
+  --sidebar-accent-foreground: 210 40% 98%;
+  --sidebar-border: 216 34% 17%;
   --sidebar-ring: 14 75% 54%;
 }
 
