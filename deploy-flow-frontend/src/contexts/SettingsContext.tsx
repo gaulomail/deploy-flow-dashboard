@@ -52,9 +52,11 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
-  // Apply theme class to document
+  // Apply theme class to document and ensure all components inherit theme
   useEffect(() => {
     const root = window.document.documentElement;
+    root.className = ''; // Clear existing classes
+    root.classList.add(settings.theme); // Add theme class
     if (settings.theme === 'dark') {
       root.classList.add('dark');
       root.classList.remove('light');
@@ -95,4 +97,4 @@ export function useSettings() {
     throw new Error('useSettings must be used within a SettingsProvider');
   }
   return context;
-} 
+}
