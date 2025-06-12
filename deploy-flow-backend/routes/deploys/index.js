@@ -6,9 +6,9 @@ module.exports = async function (fastify, opts) {
   fastify.post('/', async function (request, reply) {
     // Replace these with your actual SSH connection details or get them from request.body
     const sshConfig = {
-      host: 'your.ssh.server',
+      host: 'tools.mukuru.com',
       port: 22,
-      username: 'your_username',
+      username: 'gaudencio',
       // Use one of the following authentication methods:
       // password: 'your_password',
       // OR
