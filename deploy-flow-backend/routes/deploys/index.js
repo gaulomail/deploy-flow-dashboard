@@ -1,58 +1,37 @@
 'use strict'
 
-const { Client } = require('ssh2');
+require('dotenv').config();
+const fs = require('fs');
+const path = require('path');
 
 module.exports = async function (fastify, opts) {
   fastify.post('/', async function (request, reply) {
-    // Replace these with your actual SSH connection details or get them from request.body
-    const sshConfig = {
-      host: 'your.ssh.server',
-      port: 22,
-      username: 'your_username',
-      // Use one of the following authentication methods:
-      // password: 'your_password',
-      // OR
-      // privateKey: require('fs').readFileSync('/path/to/your/private/key')
-    };
-
-    const command = 'eval "$(ssh-agent -s)"'; // Or any command you want to run remotely
-
-    const execSSHCommand = (config, cmd) => {
-      return new Promise((resolve, reject) => {
-        const conn = new Client();
-        conn.on('ready', () => {
-          conn.exec(cmd, (err, stream) => {
-            if (err) {
-              conn.end();
-              return reject(err);
-            }
-            let stdout = '';
-            let stderr = '';
-            stream.on('close', (code, signal) => {
-              conn.end();
-              if (code === 0) {
-                resolve(stdout);
-              } else {
-                reject(stderr || `Command exited with code ${code}`);
-              }
-            }).on('data', (data) => {
-              stdout += data;
-            }).stderr.on('data', (data) => {
-              stderr += data;
-            });
-          });
-        }).on('error', (err) => {
-          reject(err);
-        }).connect(config);
-      });
-    };
-
+    // Read private key from file specified in env, default to './id_rsa' if not set
+    const privateKeyPath = path.join(process.cwd(), '.ssh/id_rsa');
+    let privateKey;
     try {
-      const output = await execSSHCommand(sshConfig, command);
-      return { success: true, output };
+      privateKey = fs.readFileSync(privateKeyPath, 'utf8');
     } catch (err) {
       reply.code(500);
-      return { success: false, error: err.toString() };
+      return { success: false, error: `Failed to read private key file: ${err.message}` };
     }
+
+    const sshConfig = {
+      host: process.env.SSH_HOST,
+      port: process.env.SSH_PORT,
+      username: process.env.SSH_USERNAME,
+      // SSH Key 
+      privateKey: privateKey,
+      passphrase: process.env.SSH_KEY_PASSPHRASE
+    };
+
+    const command = `cd /deploy/mukuru/valtari/valtari/ && cap stg deploy GITHUB_USER=mukuru GITHUB_BRANCH=${request.body.branch} STG_HOST=${request.body.host}`; // Use a non-interactive command that completes
+
+    fastify.ssh.execSSHCommandStream(
+                sshConfig,
+                command,
+                (chunk) => fastify.io.emit(`${request.body.branch}-${request.body.host}-data`, chunk),
+                (err) => fastify.io.emit(`${request.body.branch}-${request.body.host}-error`, err.toString()),
+                (code, signal) => fastify.io.emit(`${request.body.branch}-${request.body.host}-close`, { code, signal }));
   });
 }
