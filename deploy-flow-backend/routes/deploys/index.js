@@ -22,7 +22,7 @@ module.exports = async function (fastify, opts) {
       username: process.env.SSH_USERNAME,
       // SSH Key 
       privateKey: privateKey,
-      passphrase: process.env.SSH_KEY_PASSPHRASE
+      passphrase: process.env.SSH_KEY_PASSPHRASE ?? undefined
     };
 
     const command = `cd /deploy/mukuru/valtari/valtari/ && cap stg deploy GITHUB_USER=mukuru GITHUB_BRANCH=${request.body.branch} STG_HOST=${request.body.host}`; // Use a non-interactive command that completes
