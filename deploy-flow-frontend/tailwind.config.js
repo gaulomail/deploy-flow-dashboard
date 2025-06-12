@@ -8,8 +8,8 @@ export default {
   theme: {
     extend: {
       colors: {
-        primary: '#3B82F6',
-        secondary: '#10B981',
+        primary: '#df5f35',
+        secondary: '#df5f35',
         background: {
           light: '#FFFFFF',
           dark: '#18181B',
@@ -22,4 +22,4 @@ export default {
     },
   },
   plugins: [],
-} 
+}
