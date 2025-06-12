@@ -1,25 +1,16 @@
 version: '3.8'
-services:
-  backend:
-    build:
-      context: ./deploy-flow-backend
-      dockerfile: Dockerfile
-    container_name: deploy-flow-backend
-    ports:
-      - "3000:3000"
-    environment:
-      - NODE_ENV=Development
-    restart: unless-stopped
 
-  frontend:
+services:
+  app:
     build:
-      context: ./deploy-flow-frontend
+      context: .
       dockerfile: Dockerfile
-    container_name: deploy-flow-frontend
     ports:
-      - "3001:80"
+      - "3000:3000"  # Backend port
+      - "80:80"      # Frontend port
     environment:
-      - NODE_ENV=Development
-    depends_on:
-      - backend
+      - NODE_ENV=production
+      - GITHUB_TOKEN=${GITHUB_TOKEN}  # Pass GitHub token from host
+    volumes:
+      - ./deploy-flow-backend/.env:/app/backend/.env  # Mount .env file for backend
     restart: unless-stopped
