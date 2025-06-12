@@ -5,14 +5,14 @@
 /* Definition of the design system. All colors, gradients, fonts, etc should be defined here. */
 
 :root {
-  --background: 0 0% 100%;
-  --foreground: 240 10% 3.9%;
+  --background: 0 0% 98%;
+  --foreground: 0 0% 40%;
 
   --card: 0 0% 100%;
-  --card-foreground: 0 0% 20%;
+  --card-foreground: 0 0% 40%;
 
   --popover: 0 0% 100%;
-  --popover-foreground: 0 0% 20%;
+  --popover-foreground: 0 0% 40%;
 
   /* Mukuru Orange */
   --primary: 14 75% 54%;
@@ -24,7 +24,7 @@
 
   /* Light gray for muted backgrounds */
   --muted: 0 0% 96%;
-  --muted-foreground: 0 0% 45%;
+  --muted-foreground: 0 0% 60%;
 
   /* Mukuru Orange (Accent) */
   --accent: 14 75% 54%;
@@ -52,13 +52,13 @@
 }
 
 .dark {
-  --background: 240 10% 3.9%;
+  --background: 0 0% 0%;
   --foreground: 0 0% 98%;
 
-  --card: 0 0% 10%;
+  --card: 0 0% 5%;
   --card-foreground: 0 0% 98%;
 
-  --popover: 0 0% 10%;
+  --popover: 0 0% 5%;
   --popover-foreground: 0 0% 98%;
 
   /* Maintain Mukuru Orange in dark mode */
@@ -69,7 +69,7 @@
   --secondary: 14 75% 54%;
   --secondary-foreground: 0 0% 100%;
 
-  --muted: 0 0% 15%;
+  --muted: 0 0% 10%;
   --muted-foreground: 0 0% 65%;
 
   /* Mukuru Orange (Accent) - for dark mode */
@@ -83,7 +83,7 @@
   --input: 0 0% 20%;
   --ring: 14 75% 54%;
 
-  --sidebar-background: 0 0% 12%;
+  --sidebar-background: 0 0% 3%;
   --sidebar-foreground: 0 0% 98%;
   --sidebar-primary: 14 75% 54%;
   --sidebar-primary-foreground: 0 0% 100%;
@@ -97,8 +97,32 @@
   border-color: hsl(var(--border));
 }
 
+/* Base theme styles */
 body {
-  @apply bg-background-light dark:bg-background-dark text-text-light dark:text-text-dark;
+  @apply bg-background text-foreground transition-colors duration-200;
+}
+
+/* Light theme specific styles */
+.light {
+  @apply bg-background text-foreground;
+}
+
+/* Dark theme specific styles */
+.dark {
+  @apply bg-background text-foreground;
+}
+
+/* Theme-aware component styles */
+.themed-component {
+  @apply bg-card text-card-foreground border border-border rounded-lg p-4;
+}
+
+.themed-input {
+  @apply bg-background text-foreground border border-input;
+}
+
+.themed-button {
+  @apply bg-primary text-[hsl(var(--primary-foreground))] hover:bg-primary/90;
 }
 
 .animate-fade-in {

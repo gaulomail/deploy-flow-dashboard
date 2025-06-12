@@ -328,7 +328,7 @@ const DeploymentInterface = () => {
   };
 
   return (
-    <div className="min-h-screen bg-black p-6 overflow-x-hidden"> {/* Added overflow-x-hidden for safety with transforms */}
+    <div className="min-h-screen bg-background p-6 overflow-x-hidden themed-component"> {/* Added overflow-x-hidden for safety with transforms */}
       <div className="max-w-4xl mx-auto space-y-6">
         {/* Header */}
         <div className={cn(
@@ -537,11 +537,11 @@ const DeploymentInterface = () => {
                 {/* Progress Bar */}
                 {isDeploying && (
                   <div className="space-y-2">
-                    <div className="flex justify-between text-sm text-gray-400">
+                    <div className="flex justify-between text-sm text-muted-foreground">
                       <span>Deployment Progress</span>
                       <span>{Math.round(deploymentProgress)}%</span>
                     </div>
-                    <Progress value={deploymentProgress} className="h-3 bg-zinc-800 [&>div]:bg-primary" />
+                    <Progress value={deploymentProgress} className="h-3 bg-muted [&>div]:bg-primary" />
                   </div>
                 )}
               </TabsContent>
@@ -554,7 +554,7 @@ const DeploymentInterface = () => {
                       key={step.id}
                       className={cn(
                         "flex items-center gap-4 p-4 rounded-lg border-2 transition-all",
-                        "bg-zinc-900/50 backdrop-blur-sm",
+                        "bg-card/50 backdrop-blur-sm themed-component",
                         step.status === 'running'
                           ? 'border-primary/50 shadow-lg shadow-primary/10'
                           : step.status === 'completed'
@@ -568,7 +568,7 @@ const DeploymentInterface = () => {
                         {getStepStatusIcon(step.status)}
                       </div>
                       <div className="flex-1">
-                        <p className="font-medium text-zinc-100">{step.name}</p>
+                        <p className="font-medium text-foreground">{step.name}</p>
                         {step.status === 'running' && (
                           <p className="text-sm text-primary">In progress...</p>
                         )}
@@ -579,7 +579,7 @@ const DeploymentInterface = () => {
                           <p className="text-sm text-red-500">Failed</p>
                         )}
                         {step.duration && (
-                          <p className="text-sm text-zinc-400 mt-1">
+                          <p className="text-sm text-muted-foreground mt-1">
                             Duration: {step.duration}s
                           </p>
                         )}
@@ -597,7 +597,7 @@ const DeploymentInterface = () => {
                       key={log.id}
                       className={cn(
                         "flex items-center gap-4 p-4 rounded-lg border-2 transition-all",
-                        "bg-zinc-900/50 backdrop-blur-sm hover:bg-zinc-800/50",
+                        "bg-card/50 backdrop-blur-sm hover:bg-muted/50 themed-component",
                         log.status === 'success'
                           ? 'border-green-500/50 hover:border-green-500/70'
                           : log.status === 'failed'
@@ -610,10 +610,10 @@ const DeploymentInterface = () => {
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-1">
-                          <span className="font-medium text-zinc-100">{log.user}</span>
+                          <span className="font-medium text-foreground">{log.user}</span>
                           <Badge 
                             variant="outline" 
-                            className="text-xs border-zinc-700 text-zinc-300 bg-zinc-800/50"
+                            className="text-xs border-border text-muted-foreground bg-muted/50"
                           >
                             {log.branch}
                           </Badge>
@@ -624,7 +624,7 @@ const DeploymentInterface = () => {
                             {log.environment}
                           </Badge>
                         </div>
-                        <p className="text-sm text-zinc-400">
+                        <p className="text-sm text-muted-foreground">
                           {log.timestamp.toLocaleString()}
                         </p>
                       </div>
