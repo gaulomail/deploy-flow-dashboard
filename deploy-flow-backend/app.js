@@ -22,6 +22,22 @@ module.exports = async function (fastify, opts) {
       type: 'object',
       required: [],
       properties: {
+        SSH_HOST: {
+          type: 'string',
+          default: ''
+        },
+        SSH_PORT: {
+          type: 'string',
+          default: ''
+        },
+        SSH_USERNAME: {
+          type: 'string',
+          default: ''
+        },
+        SSH_KEY_PASSPHRASE: {
+          type: 'string',
+          default: ''
+        },
         GITHUB_TOKEN: {
           type: 'string',
           default: ''
