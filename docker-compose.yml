@@ -6,7 +6,7 @@ services:
       dockerfile: Dockerfile
     container_name: deploy-flow-backend
     ports:
-      - "5000:5000"
+      - "3000:3000"
     environment:
       - NODE_ENV=Development
     restart: unless-stopped
@@ -17,7 +17,7 @@ services:
       dockerfile: Dockerfile
     container_name: deploy-flow-frontend
     ports:
-      - "3000:3000"
+      - "3001:80"
     environment:
       - NODE_ENV=Development
     depends_on:
