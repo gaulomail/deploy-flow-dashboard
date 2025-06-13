@@ -53,11 +53,11 @@ module.exports = async function (fastify, opts) {
 
     // Convert host to numeric code
     const hostCode = hostToNumeric(host);
-    const command = `cd /deploy/mukuru/valtari/valtari/ && cap stg deploy GITHUB_USER=mukuru GITHUB_BRANCH=${branch} STG_HOST=${hostCode}`; // Use a non-interactive command that completes
+    const command = `cd /deploy/mukuru/valtari/valtari/ && cap stg deploy GITHUB_USER=gualomail GITHUB_BRANCH=${branch} STG_HOST=${hostCode}`; // Use a non-interactive command that completes
     
     try
     {
-      const refreshCommand = `cd /deploy/mukuru/valtari/valtari/ && cap stg deploy_lock:release GITHUB_USER=mukuru STG_HOST=${hostCode}`;
+      const refreshCommand = `cd /deploy/mukuru/valtari/valtari/ && cap stg deploy_lock:release GITHUB_USER=gualomail STG_HOST=${hostCode}`;
       const result = await fastify.ssh.execSSHCommand(sshConfig, refreshCommand);
       console.log('deploy_lock:release',result)
     }
