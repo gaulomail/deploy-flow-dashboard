@@ -71,7 +71,11 @@ module.exports = async function (fastify, opts) {
   })
 
   fastify.register(require("fastify-socket.io"), {
-  // put your options here
+    cors: {
+      origin: ['http://localhost:8080', 'http://localhost:8081'],
+      methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+      credentials: true
+    }
   });
 }
 
