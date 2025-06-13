@@ -5,14 +5,14 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge, badgeVariants } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import { GitBranch, Rocket, Clock, User, CheckCircle, XCircle, Loader, Unlock, Settings, X } from 'lucide-react';
+import { GitBranch, Rocket, Clock, User, CheckCircle, XCircle, Loader, Unlock, Settings, X, Eye, Terminal } from 'lucide-react';
 import { AliceChatBot } from './AliceChatBot';
 import { Combobox } from "@/components/ui/combobox";
 import { cn } from '@/lib/utils';
 import { Settings as SettingsComponent } from './Settings';
 import { useSettings } from '../contexts/SettingsContext';
 import { toast } from 'react-hot-toast';
-
+import io, { Socket } from 'socket.io-client';
 // Framer Motion for more complex animations if needed in the future, but using Tailwind for now.
 // import { motion } from "framer-motion";
 
@@ -23,6 +23,7 @@ interface DeploymentLog {
   branch: string;
   environment: string;
   status: 'success' | 'failed' | 'in-progress';
+  trace: Array<string>;
 }
 
 interface DeploymentStep {
@@ -62,7 +63,15 @@ const DeploymentInterface = () => {
       timestamp: new Date('2024-06-11T14:30:00'),
       branch: 'feature-auth',
       environment: 'staging-3',
-      status: 'success'
+      status: 'success',
+      trace: [
+        'Preparing deployment...',
+        'Building application...',
+        'Running tests...',
+        'Deploying to environment...',
+        'Health checks passed.',
+        'Deployment complete.'
+      ]
     },
     {
       id: '2',
@@ -70,7 +79,13 @@ const DeploymentInterface = () => {
       timestamp: new Date('2024-06-11T13:15:00'),
       branch: 'fix-payment-bug',
       environment: 'staging-1',
-      status: 'failed'
+      status: 'failed',
+      trace: [
+        'Preparing deployment...',
+        'Building application...',
+        'Tests failed: payment.test.js',
+        'Deployment aborted.'
+      ]
     },
     {
       id: '3',
@@ -78,7 +93,15 @@ const DeploymentInterface = () => {
       timestamp: new Date('2024-06-11T12:00:00'),
       branch: 'main',
       environment: 'ubt',
-      status: 'success'
+      status: 'success',
+      trace: [
+        'Preparing deployment...',
+        'Building application...',
+        'Running tests...',
+        'Deploying to environment...',
+        'Health checks passed.',
+        'Deployment complete.'
+      ]
     }
   ]);
 
@@ -235,6 +258,106 @@ const DeploymentInterface = () => {
     }
   }, [selectedRepo, fetchBranches]); // fetchBranches is now a stable dependency due to useCallback
 
+  useEffect(() => {
+    if(!isDeploying)
+      return;
+
+    if(!selectedBranch || !selectedEnvironment)
+      return;
+
+    const steps = [...deploymentSteps];
+    const newLog: DeploymentLog = {
+      id: Date.now().toString(),
+      user: 'Current User',
+      timestamp: new Date(),
+      branch: selectedBranch,
+      environment: selectedEnvironment,
+      status: 'success',
+      trace: [],
+    };
+
+    // Only connect when deployment starts, or you can connect on mount if needed
+    const socket: Socket = io('http://localhost:3000');
+
+    // Event names based on your branch and host
+    const dataEvent = `${selectedBranch}-${selectedEnvironment}-data`;
+    const errorEvent = `${selectedBranch}-${selectedEnvironment}-error`;
+    const closeEvent = `${selectedBranch}-${selectedEnvironment}-close`;
+    
+    // Example: You might want to append logs or update state based on these events
+    socket.on(dataEvent, (data: string) => {
+      // Handle incoming data
+      if(newLog.trace.length == 0)
+      {
+        steps[0].status = 'running'; 
+        setDeploymentProgress((1 / steps.length) * 100);
+      }
+      else if(data.includes('deploy_lock:create'))
+      {
+        steps[0].status = 'completed';
+        steps[1].status = 'running'; 
+        setDeploymentProgress((2 / steps.length) * 100);
+      }
+      else if(data.includes('echo'))
+      {
+        steps[1].status = 'completed';
+        steps[2].status = 'running'; 
+        setDeploymentProgress((3 / steps.length) * 100);
+      }
+      else if(data.includes('deploy_lock:release'))
+      {
+        steps[2].status = 'completed';
+        steps[3].status = 'running'; 
+        setDeploymentProgress((4 / steps.length) * 100);
+      }
+      else if(data.includes('valtari_deploy_stg'))
+      {
+        steps[3].status = 'completed';
+        steps[4].status = 'running'; 
+        setDeploymentProgress((5 / steps.length) * 100);
+      }
+      else if(data.includes('newrelic:notice_deployment'))
+      {
+        steps[4].status = 'completed';
+      }
+
+      setDeploymentSteps([...steps])
+      newLog.trace.push(data);
+      console.log('DATA:', data);
+    });
+
+    socket.on(errorEvent, (error: string) => {
+      // Handle error event (e.g., show error toast or update error state)
+      // setError(error);
+      console.error('ERROR:', error);
+      toast.error(`Deployment API error: ${error}`);
+      socket.off(dataEvent);
+      socket.off(errorEvent);
+      socket.off(closeEvent);
+      socket.disconnect();
+      setDeploymentLogs([newLog, ...deploymentLogs]);
+      setDeploymentSteps(steps.map(step => ({ ...step, status: 'pending' })));
+      setDeploymentProgress(0);
+      setIsDeploying(false);
+      setActiveTab('logs');
+    });
+
+    socket.on(closeEvent, () => {
+      // Handle close event (e.g., mark deployment as finished)
+      // setDeploymentFinished(true);
+      console.log('CLOSE event received');
+      socket.off(dataEvent);
+      socket.off(errorEvent);
+      socket.off(closeEvent);
+      socket.disconnect();
+      setDeploymentLogs([newLog, ...deploymentLogs]);
+      setDeploymentSteps(steps.map(step => ({ ...step, status: 'pending' })));
+      setDeploymentProgress(0);
+      setIsDeploying(false);
+      setActiveTab('logs');
+    });
+  }, [selectedBranch, selectedEnvironment, isDeploying]);
+
   // Fetch branch details when a branch is selected
   const fetchBranchDetails = async (branch: string) => {
     if (!branch || !selectedRepo) return;
@@ -309,37 +432,20 @@ const DeploymentInterface = () => {
     setDeploymentProgress(0);
     setActiveTab('steps');
 
-    // Simulate deployment process
-    const steps = [...deploymentSteps];
-    for (let i = 0; i < steps.length; i++) {
-      steps[i].status = 'running';
-      setDeploymentSteps([...steps]);
-      
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      steps[i].status = 'completed';
-      setDeploymentSteps([...steps]);
-      setDeploymentProgress(((i + 1) / steps.length) * 100);
-    }
-
-    // Add to logs
-    const newLog: DeploymentLog = {
-      id: Date.now().toString(),
-      user: 'Current User',
-      timestamp: new Date(),
-      branch: selectedBranch,
-      environment: selectedEnvironment,
-      status: 'success'
-    };
-    setDeploymentLogs([newLog, ...deploymentLogs]);
-
-    setIsDeploying(false);
+    const response = await fetch('http://localhost:3000/deploys', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          branch: selectedBranch,
+          host: selectedEnvironment,
+        }),
+      });
     
-    // Reset steps for next deployment
-    setTimeout(() => {
-      setDeploymentSteps(steps.map(step => ({ ...step, status: 'pending' })));
-      setDeploymentProgress(0);
-    }, 3000);
+    if (!response.ok) {
+      toast.error(`Deployment API error: ${response.statusText}`);
+    }
   };
 
   const handleRelease = () => {
@@ -372,6 +478,12 @@ const DeploymentInterface = () => {
         return <div className="h-4 w-4 rounded-full border-2 border-gray-300" />;
     }
   };
+
+  // State for log modal
+  const [showLogModal, setShowLogModal] = useState(false);
+  const [activeLogTrace, setActiveLogTrace] = useState<string[] | null>(null);
+  const [activeLogUser, setActiveLogUser] = useState<string>('');
+  const [activeLogTimestamp, setActiveLogTimestamp] = useState<string>('');
 
   return (
     <div className="min-h-screen bg-background p-6 overflow-x-hidden themed-component"> {/* Added overflow-x-hidden for safety with transforms */}
@@ -674,7 +786,7 @@ const DeploymentInterface = () => {
                           {log.timestamp.toLocaleString()}
                         </p>
                       </div>
-                      <div className="flex-shrink-0">
+                      <div className="flex-shrink-0 flex items-center gap-2">
                         <Badge
                           variant={
                             log.status === 'success'
@@ -692,10 +804,48 @@ const DeploymentInterface = () => {
                         >
                           {log.status}
                         </Badge>
+                        <button
+                          className="ml-2 p-1 rounded hover:bg-zinc-800 transition-colors"
+                          title="View Log Trace"
+                          onClick={() => {
+                            setActiveLogTrace(log.trace);
+                            setActiveLogUser(log.user);
+                            setActiveLogTimestamp(log.timestamp.toLocaleString());
+                            setShowLogModal(true);
+                          }}
+                        >
+                          <Terminal className="h-5 w-5 text-primary" />
+                        </button>
                       </div>
                     </div>
                   ))}
                 </div>
+                {/* Log Trace Modal */}
+                {showLogModal && (
+                  <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70">
+                    <div className="relative bg-zinc-900 border-2 border-primary rounded-lg shadow-xl w-full max-w-2xl max-h-[80vh] flex flex-col">
+                      <button
+                        className="absolute top-4 right-4 text-zinc-400 hover:text-primary"
+                        onClick={() => setShowLogModal(false)}
+                        title="Close"
+                      >
+                        <X className="h-6 w-6" />
+                      </button>
+                      <div className="p-6 pb-2 border-b border-zinc-800 flex items-center gap-3">
+                        <Terminal className="h-6 w-6 text-primary" />
+                        <span className="font-semibold text-lg text-primary">Log Trace</span>
+                        <span className="ml-auto mr-6 text-xs text-muted-foreground">{activeLogUser} &middot; {activeLogTimestamp}</span>
+                      </div>
+                      <div className="flex-1 overflow-y-auto p-6 bg-black text-green-400 font-mono text-sm rounded-b-lg shadow-inner" style={{minHeight: '200px'}}>
+                        {activeLogTrace && activeLogTrace.length > 0 ? (
+                          <pre className="whitespace-pre-wrap">{activeLogTrace.join('\n')}</pre>
+                        ) : (
+                          <span className="text-muted-foreground">No log trace available.</span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                )}
               </TabsContent>
             </Tabs>
           </CardContent>
