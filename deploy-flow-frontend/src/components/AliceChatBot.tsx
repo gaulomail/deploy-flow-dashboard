@@ -1,8 +1,8 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { MessageCircle, Send, X, Bot, User, GitBranch, Server } from 'lucide-react';
+import { MessageCircle, Send, X, Bot, User, GitBranch, Server, Mic, Square } from 'lucide-react'; // Added Mic, Square
 import { startChat, sendMessage } from '@/services/gemini';
 import { useSettings } from '@/contexts/SettingsContext';
 import { cn } from '@/lib/utils';
@@ -51,10 +51,143 @@ const AliceChatBot: React.FC<AliceChatBotProps> = ({ onDeploy }) => {
   const [selectedEnvironment, setSelectedEnvironment] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [chatSession, setChatSession] = useState<any>(null);
+  const synthRef = useRef<SpeechSynthesis | null>(null);
+  const [autoListenAfterAliceSpeaks, setAutoListenAfterAliceSpeaks] = useState(false);
+
+  // Speech Recognition (STT)
+  const [isListening, setIsListening] = useState(false);
+    const recognitionRef = useRef<any>(null); // Using any for SpeechRecognition type for broader compatibility
+  const hasSpokenInitialGreetingRef = useRef(false); // To ensure initial greeting is spoken only once per open
+
+  // Effect for STT setup and cleanup
+  useEffect(() => {
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      console.warn("Speech Recognition API is not supported in this browser.");
+      // Optionally, disable microphone button or show a message to the user
+      return;
+    }
+
+    const recognition = new SpeechRecognition();
+    recognition.continuous = false; // Process speech after a pause
+    recognition.interimResults = true; // Get interim results as user speaks
+    recognition.lang = 'en-US'; // Set language
+
+    recognition.onresult = (event: any) => {
+      let interimTranscript = '';
+      let finalTranscript = '';
+
+      for (let i = event.resultIndex; i < event.results.length; ++i) {
+        if (event.results[i].isFinal) {
+          finalTranscript += event.results[i][0].transcript;
+        } else {
+          interimTranscript += event.results[i][0].transcript;
+        }
+      }
+      // Update input text with interim or final results
+      // Prioritize final transcript but show interim for responsiveness
+      setInputText(finalTranscript || interimTranscript);
+      if (finalTranscript) {
+        // Automatically send the message when a final transcript is received
+        // Ensure inputText is updated before calling handleSendMessage if it relies on state
+        // A direct call might be better if handleSendMessage can take the text directly.
+        // For now, let's assume handleSendMessage will pick up the updated inputText.
+        // We'll call a dedicated function to handle this to ensure state updates.
+        handleSpokenMessage(finalTranscript);
+        if (recognitionRef.current) {
+          recognitionRef.current.stop(); // Stop listening, onend will set isListening to false
+        }
+      }
+    };
+
+    recognition.onerror = (event: any) => {
+      console.error("Speech recognition error", event.error);
+      if (event.error === 'no-speech' || event.error === 'audio-capture' || event.error === 'not-allowed') {
+        // Handle specific errors like no speech, mic issues, or permission denied
+      }
+      setIsListening(false);
+    };
+
+    recognition.onend = () => {
+      setIsListening(false);
+    };
+
+    recognitionRef.current = recognition;
+
+    return () => {
+      if (recognitionRef.current) {
+        recognitionRef.current.stop();
+      }
+    };
+  }, []); // Empty dependency array, set up once
+
+  const handleToggleListen = useCallback(() => {
+    if (!recognitionRef.current) {
+      console.warn("Speech Recognition not available.");
+      return;
+    }
+    if (isListening) {
+      recognitionRef.current.stop();
+      setAutoListenAfterAliceSpeaks(false); // User manually stopped listening
+    } else {
+      try {
+        setInputText(''); // Clear input text before starting to listen
+        recognitionRef.current.start();
+        setIsListening(true);
+        setAutoListenAfterAliceSpeaks(true); // User initiated listening with voice
+      } catch (error) {
+        console.error("Error starting speech recognition:", error);
+        setIsListening(false); // Ensure listening state is reset on error
+      }
+    }
+  }, [isListening, setInputText]); // Added setInputText to dependencies
+
+  // Text-to-Speech (TTS) function
+  const speakText = useCallback((text: string) => {
+    if (!synthRef.current || !text) return;
+
+    // Cancel any ongoing speech before speaking a new message
+    synthRef.current.cancel();
+
+    const utterance = new SpeechSynthesisUtterance(text);
+    // You can customize voice, rate, pitch etc. here if desired
+    utterance.onend = () => {
+      if (autoListenAfterAliceSpeaks && recognitionRef.current && !isListening) {
+        try {
+          setInputText(''); // Clear input for new speech
+          recognitionRef.current.start();
+          setIsListening(true); // Update listening state
+        } catch (error) {
+          console.error("Error auto-starting speech recognition:", error);
+          setIsListening(false);
+          setAutoListenAfterAliceSpeaks(false); // Disable auto-listen on error
+        }
+      }
+    };
+    // utterance.voice = voices.find(voice => voice.name === 'Google UK English Female') || voices[0];
+    // utterance.pitch = 1;
+    // utterance.rate = 1;
+    synthRef.current.speak(utterance);
+  }, [autoListenAfterAliceSpeaks, isListening, setInputText]); // Added dependencies
+
+  // Initialize SpeechSynthesis reference
+  useEffect(() => {
+    if (typeof window !== 'undefined' && window.speechSynthesis) {
+      synthRef.current = window.speechSynthesis;
+    } else {
+      console.warn("Speech Synthesis API is not supported in this browser.");
+    }
+    // Clean up: cancel any speech if the component unmounts
+    return () => {
+      if (synthRef.current) {
+        synthRef.current.cancel();
+      }
+    };
+  }, []);
 
   // Branch fetching
-  const [branches, setBranches] = useState<string[]>([]);
-  const [branchesLoading, setBranchesLoading] = useState(false);
+  const [branches, setBranches] = useState<string[]>([]); // Restored this line
+  const [branchesLoading, setBranchesLoading] = useState(false); // Restored this line
   const [branchesError, setBranchesError] = useState('');
 
   useEffect(() => {
@@ -95,7 +228,18 @@ const AliceChatBot: React.FC<AliceChatBotProps> = ({ onDeploy }) => {
       }
     };
     initChat();
-  }, []);
+
+    // Speak initial prompt when chat opens for the first time in a session
+    if (isOpen && !hasSpokenInitialGreetingRef.current) {
+      speakText(INITIAL_PROMPT);
+      hasSpokenInitialGreetingRef.current = true;
+    }
+    // Reset when chat is closed so it speaks again next time it opens
+    if (!isOpen) {
+      hasSpokenInitialGreetingRef.current = false;
+    }
+
+  }, [isOpen]); // Added isOpen to dependencies
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -114,9 +258,14 @@ const AliceChatBot: React.FC<AliceChatBotProps> = ({ onDeploy }) => {
       suggestions
     };
     setMessages(prev => [...prev, newMessage]);
+
+    if (!isUser) {
+      speakText(text); // Speak Alice's messages
+    }
   };
 
   const handleSuggestionClick = async (suggestion: string) => {
+    setAutoListenAfterAliceSpeaks(false); // User clicked a suggestion
     addMessage(suggestion, true);
     setIsTyping(true);
 
@@ -180,10 +329,43 @@ const AliceChatBot: React.FC<AliceChatBotProps> = ({ onDeploy }) => {
     }, 500);
   };
 
+  // Function to handle sending message from speech input
+  const handleSpokenMessage = async (spokenText: string) => {
+    if (!spokenText.trim() || !chatSession) return;
+
+    // setAutoListenAfterAliceSpeaks is already true if we got here via voice
+    addMessage(spokenText, true);
+    setInputText(''); // Clear the input field
+    setIsTyping(true);
+
+    try {
+      const contextMessage = `You are Alice, a deployment assistant. You can only help with deployments and must stay focused on that. \nCurrent state: ${selectedBranch ? `Selected branch: ${selectedBranch}` : 'No branch selected'}\n${selectedEnvironment ? `Selected environment: ${selectedEnvironment}` : 'No environment selected'}\nAvailable branches: ${branches.join(', ')}\nAvailable environments: ${AVAILABLE_ENVIRONMENTS.join(', ')}\n\nUser message: ${spokenText}\n\nRespond naturally but keep the focus on deployments. If they ask about anything not related to deployments, branches, or environments, politely redirect them to deployment-related topics.`;
+      const response = await sendMessage(chatSession, contextMessage);
+      let suggestions = ['Show available branches', 'Show staging environments', 'Help me deploy'];
+      if (selectedBranch && !selectedEnvironment) {
+        suggestions = AVAILABLE_ENVIRONMENTS;
+      } else if (!selectedBranch) {
+        suggestions = [...suggestions, ...branches];
+      }
+      addMessage(response, false, suggestions);
+    } catch (error) {
+      console.error('Error in chat:', error);
+      const errorMessage = (error as Error).message || "Unknown error occurred";
+      addMessage(`I apologize, but I encountered an error: ${errorMessage}. Please try again.`, false, 
+        ['Show available branches', 'Show staging environments', 'Help me deploy']);
+    } finally {
+      setIsTyping(false);
+    }
+  };
+
   const handleSendMessage = async () => {
     if (!inputText.trim() || !chatSession) return;
 
+    setAutoListenAfterAliceSpeaks(false); // User sent message by typing/pressing enter
     const userMessage = inputText.trim();
+    // Call the same logic as handleSpokenMessage for consistency, or refactor to a common function
+    // For now, let's keep it separate to clearly distinguish typed vs spoken triggers if needed later
+    // but essentially it will do the same as handleSpokenMessage with inputText
     addMessage(userMessage, true);
     setInputText('');
     setIsTyping(true);
@@ -336,8 +518,17 @@ const AliceChatBot: React.FC<AliceChatBotProps> = ({ onDeploy }) => {
                   className="flex-1 themed-input"
                 />
                 <Button
+                  onClick={handleToggleListen} // Call handleToggleListen
+                  variant="outline" // Style appropriately
+                  size="icon" // Make it an icon button
+                  className="border-border hover:bg-muted/80"
+                  title={isListening ? "Stop listening" : "Start listening"}
+                >
+                  {isListening ? <Square className="h-4 w-4 text-red-500" /> : <Mic className="h-4 w-4" />}
+                </Button>
+                <Button
                   onClick={handleSendMessage}
-                  disabled={!inputText.trim() || !chatSession}
+                  disabled={!inputText.trim() || !chatSession || isListening}
                   className="bg-primary hover:bg-primary/90 text-white"
                 >
                   <Send className="h-4 w-4" />
