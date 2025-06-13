@@ -335,6 +335,7 @@ const DeploymentInterface = () => {
       socket.off(errorEvent);
       socket.off(closeEvent);
       socket.disconnect();
+      newLog.status = 'failed';
       setDeploymentLogs([newLog, ...deploymentLogs]);
       setDeploymentSteps(steps.map(step => ({ ...step, status: 'pending' })));
       setDeploymentProgress(0);
