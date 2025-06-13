@@ -20,13 +20,14 @@ class GitHubClient {
 
     async getBranches(owner, repo) {
         try {
-            console.log(`Fetching branches for ${owner}/${repo}`);
-            const { data: branches } = await this.octokit.repos.listBranches({
+            console.log(`Fetching all branches for ${owner}/${repo} using pagination.`);
+            // Use octokit.paginate to fetch all branches
+            const allBranches = await this.octokit.paginate(this.octokit.repos.listBranches, {
                 owner,
                 repo,
-                per_page: 100
+                per_page: 100, // Request 100 items per page (GitHub API max)
             });
-            return branches.map(branch => branch.name);
+            return allBranches.map(branch => branch.name);
         } catch (error) {
             console.error('Error fetching branches:', error);
             throw new Error(`Failed to fetch branches: ${error.message}`);
